@@ -17,6 +17,7 @@ summary(data_hec)
 head(data_hec)
 str(data_hec)
 length(which(data_hec == "?"))
+#comment
 
 
 #-------------------------------NA-----------------------
