@@ -82,16 +82,16 @@ minutly_consumption_plot <- function(day1, month1, year1) {
   data_for_plot <- filter(data_for_plot, month(DateTime) == month1)
   data_for_plot <- filter(data_for_plot, day(DateTime) == day1)
 
-ggplot(data_for_plot, aes(x=DateTime)) + geom_line(aes(y = Global_active_power, color = "blue"))+
-        geom_line(aes(y=Global_reactive_power, color = "red"))+
-        geom_line(aes(y=Sub_metering_1, color= "pink")) +
-        geom_line(aes(y=Sub_metering_2, color = "yellow" ))+
-        geom_line(aes(y=Sub_metering_3, color = "green"))+
+ggplot(data_for_plot, aes(x=DateTime)) + geom_line(aes(y = Global_active_power), color = "blue")+
+        geom_line(aes(y=Global_reactive_power), color = "red")+
+        geom_line(aes(y=Sub_metering_1), color= "pink") +
+        geom_line(aes(y=Sub_metering_2), color = "yellow" )+
+        geom_line(aes(y=Sub_metering_3), color = "green")+
         ggtitle("Consumption per minute")+
         xlab("Time") + ylab("Watt hour")
 }
 
-minutly_consumption_plot(18, 04, 2007)
+minutly_consumption_plot(24, 04, 2007)
 
 #data_for_plot <- aggregate(data_hec_pre, by = list (date(data_hec_pre$DateTime)), FUN = mean)
 #length(which(is.na(data_for_plot)))
@@ -180,8 +180,9 @@ data_for_plot <- data_hec_pre
 data_for_plot <- aggregate(data_for_plot, by = list(month(data_for_plot$DateTime), year(data_for_plot$DateTime)), FUN = mean)
 data_for_plot <- gather(data_for_plot, electricity_mode, watt_hour, Global_active_power, Global_reactive_power, 
                         a = Sub_metering_1, Sub_metering_2, Sub_metering_3, Sub_remaining)
-ggplot() + geom_col(data=data_for_plot, aes(x=factor(month(DateTime)), y = watt_hour, fill = factor(year(DateTime)))) +
+ggplot() + geom_col(data=data_for_plot, aes(x=factor(month(DateTime)), y = watt_hour, fill = factor(year(DateTime))))+ scale_color_brewer(palette="Dark2") +
   facet_wrap(~electricity_mode, scales = "free_y")+ ggtitle("Monthly Consumption")
+
 
 
 
