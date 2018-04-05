@@ -21,11 +21,11 @@ head(data_hec)
 str(data_hec)
 
 #-------------------------------NA-----------------------
-length(which(is.na(data_hec_na)))
-length(which(data_hec_na == "?"))
-length(which(data_hec_na == ""))
-length(which(data_hec_na == " "))
-length(which(data_hec_na == "none"))
+length(which(is.na(data_hec)))
+length(which(data_hec == "?"))
+length(which(data_hec == ""))
+length(which(data_hec == " "))
+length(which(data_hec == "none"))
 head(data_hec)
 
 #Drop rows with NA
@@ -68,13 +68,13 @@ data2007March1 <- filter(data_hec_pre, year(DateTime) == "2007", month(DateTime)
 data_hec_pre2 <- mutate(data_hec_pre, DateTime15 = floor_date(DateTime, "15 minutes"))
 data_15min <- group_by(data_hec_pre2, DateTime15)
 data_15min <- summarize_all(data_15min,funs(mean))
-
 #--------------------------------------Plots-------------------------------------------
 #boxplots
 ggplot(data=data_15min) + geom_boxplot(aes(x= "Global_active_power", y = Global_active_power))+ 
   geom_boxplot(aes(x= "Global_reactive_power", y = Global_reactive_power))+
   theme_economist() +
   scale_fill_economist()
+ggplot(data=data_15min) + geom_line(aes(x= DateTime15, y = Global_active_power))
 
 
   
@@ -202,6 +202,37 @@ ggplot(data2006)+ geom_point(aes(x = DateTime, y = Global_active_power)) + scale
 ggplot(data2007March)+ geom_point(aes(x = DateTime, y = Global_active_power))
 ggplot(data2007March1)+ geom_point(aes(x = DateTime, y = Sub_metering_3))
 
+#---------------------------Time Series--------------------------------------------
+
+#Period Year
+energy_pyear <- function(feature) {
+  x = as.character(feature)
+  crazystuff = paste0("energy_month$", x)
+  energy_month <- group_by(data_15min, year(DateTime15), month(DateTime15), day(DateTime15))
+  energy_month <- summarize_all(energy_month,funs(mean))
+  
+  energytimeseries_year <- ts(crazystuff, frequency=12, start=c(2006, 12))
+  
+}
 
 
 
+energytimeseries_year <- energy_pyear("Global_active_power")
+
+plot.ts(energytimeseries_year)
+energytimeseries_year
+
+energytimeseriescomponents <- decompose(energytimeseries)
+plot(energytimeseriescomponents)
+
+#Period week
+energy2008 <- filter(data_15min, year(DateTime15) == 2009)
+energy_week2008 <- group_by(energy2008, year(DateTime15), month(DateTime15), day(DateTime15))
+energy_week2008 <- summarize_all(energy_week2008,funs(mean))
+energytimeseries_week <- ts(energy_week2008$Global_active_power, frequency=7, start=1, end=12)
+plot.ts(energytimeseries_week)
+energytimeseries_week
+
+energytimeseries_week_components <- decompose(energytimeseries_week)
+plot(energytimeseries_week_components)
+energytimeseries_week_components$seasonal
