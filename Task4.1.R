@@ -1,6 +1,7 @@
 
 #------------------------libraries, wd and seed-------------------------------------------
 #libraries
+library(forecast)
 library(readr)
 library(dplyr)
 library(tidyr)
@@ -8,7 +9,7 @@ library(lubridate)
 library(ggplot2)
 library(ggthemes)
 #set wd and seed
-setwd("C:/Users/VPL/Desktop/Data Science/Ubiqum/Module 3/Task 1")
+setwd("C:/Users/VPL/Desktop/Data Science/Ubiqum/Module 4/Task 1")
 set.seed(123)
 
 #-----------------import data----------------------------------
@@ -115,7 +116,7 @@ ggplot(data_for_plot, aes(x=DateTime)) + geom_point(aes(y = Global_active_power)
         ggtitle("Consumption per minute")+
         xlab("Time") + ylab("Watt hour")
 }
-
+#m
 minutly_consumption_plot(24, 04, 2007)
 
 #data_for_plot <- aggregate(data_hec_pre, by = list (date(data_hec_pre$DateTime)), FUN = mean)
@@ -268,9 +269,12 @@ plot.ts(energyts_S3_week2008)
 energyts_SR_week2008 <- energy_pweek("Sub_remaining", 2008)
 plot.ts(energyts_SR_week2008)
 
-
-
-
+energytsforecasts <- HoltWinters(energyts_GAP_year)
+energytsforecasts
+plot(energytsforecasts)
+energytsforecastsfuture <- forecast.HoltWinters(energytsforecasts, h=12)
+plot.forecast(energytsforecastsfuture)
+#?
 #energytimeseries_week_components <- decompose(energytimeseries_week)
 #plot(energytimeseries_week_components)
 #energytimeseries_week_components$seasonal
