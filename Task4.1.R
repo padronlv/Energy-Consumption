@@ -1,6 +1,7 @@
 
 #------------------------libraries, wd and seed-------------------------------------------
 #libraries
+library(caret)
 library(forecast)
 library(readr)
 library(dplyr)
@@ -60,10 +61,10 @@ summary(data_hec_pre)
 
 #----------------------------Filter by year and month--------------------------------------
 
-data2006 <- filter(data_hec_pre, year(DateTime) == "2006")
-data2007 <- filter(data_hec_pre, year(DateTime) == "2007")
-data2007March <- filter(data_hec_pre, year(DateTime) == "2007", month(DateTime) == "3")
-data2007March1 <- filter(data_hec_pre, year(DateTime) == "2007", month(DateTime) == "3", day(DateTime) == "1")
+#data2006 <- filter(data_hec_pre, year(DateTime) == "2006")
+#data2007 <- filter(data_hec_pre, year(DateTime) == "2007")
+#data2007March <- filter(data_hec_pre, year(DateTime) == "2007", month(DateTime) == "3")
+#data2007March1 <- filter(data_hec_pre, year(DateTime) == "2007", month(DateTime) == "3", day(DateTime) == "1")
 
 #-----------------------------Change granularity (15 min)--------------------------
 data_hec_pre2 <- mutate(data_hec_pre, DateTime15 = floor_date(DateTime, "15 minutes"))
@@ -113,10 +114,10 @@ ggplot(data_for_plot, aes(x=DateTime)) + geom_point(aes(y = Global_active_power)
         geom_line(aes(y=Sub_metering_1), color= "pink") +
         geom_line(aes(y=Sub_metering_2), color = "yellow" )+
         geom_line(aes(y=Sub_metering_3), color = "green")+
-        ggtitle("Consumption per minute")+
+        ggtitle("Consumption per minute")+ theme_economist() +  scale_fill_economist()+
         xlab("Time") + ylab("Watt hour")
 }
-#m
+
 minutly_consumption_plot(24, 04, 2007)
 
 #data_for_plot <- aggregate(data_hec_pre, by = list (date(data_hec_pre$DateTime)), FUN = mean)
@@ -127,7 +128,7 @@ minutly_consumption_plot(24, 04, 2007)
 #consumption in a month
 daily_consumption_plot <- function(month1, year1) {
   #plot the average consumption for every day in a month
-  data_for_plot <- aggregate(data_15min, by = list (date(data_hec_pre$DateTime)), FUN = mean)
+  data_for_plot <- aggregate(data_15min, by = list (date(data_15min$DateTime)), FUN = mean)
   #print(data_for_plot)
   data_for_plot <- filter(data_for_plot, year(DateTime) == year1)
   data_for_plot <- filter(data_for_plot, month(DateTime) == month1)
@@ -148,7 +149,7 @@ daily_consumption_plot(03, 2007)
 Monthly_consumption_plot <- function(year1) {
   # plot the average consumption for every month in a year
   # mode should be : global, submeters, or all
-  data_for_plot <- aggregate(data_15min, by = list (paste(month(data_hec_pre$DateTime)), year(data_hec_pre$DateTime)), FUN = mean)
+  data_for_plot <- aggregate(data_15min, by = list (paste(month(data_15min$DateTime)), year(data_15min$DateTime)), FUN = mean)
   data_for_plot <- filter(data_for_plot, year(DateTime) == year1)
   
   
@@ -166,7 +167,7 @@ Monthly_consumption_plot <- function(year1) {
 
 Monthly_consumption_plot(2008)
 
-data_for_plot <- aggregate(data_15min, by = list (week(data_hec_pre$DateTime), year(data_hec_pre$DateTime)), FUN = mean)
+data_for_plot <- aggregate(data_15min, by = list (week(data_15min$DateTime), year(data_15min$DateTime)), FUN = mean)
 weekly_consumption_plot <- function(mode="all") {
   # plot the average consumption for every month in a year
   # mode should be : global, submeters, or all
@@ -193,7 +194,7 @@ data_for_plot <- gather(data_for_plot, electricity_mode, watt_hour, Global_activ
 
 Monthly_consumption_bar <- function(year1) {
   
-  data_for_plot <- filter(data_hec_pre, year(DateTime) == year1)
+  data_for_plot <- filter(data_15min, year(DateTime) == year1)
   data_for_plot <- aggregate(data_for_plot, by = list(month(data_for_plot$DateTime)), FUN = mean)
   data_for_plot <- gather(data_for_plot, electricity_mode, watt_hour, Global_active_power, Global_reactive_power, Sub_metering_1, Sub_metering_2, Sub_metering_3)
   ggplot() +
@@ -272,9 +273,96 @@ plot.ts(energyts_SR_week2008)
 energytsforecasts <- HoltWinters(energyts_GAP_year)
 energytsforecasts
 plot(energytsforecasts)
-energytsforecastsfuture <- forecast.HoltWinters(energytsforecasts, h=12)
-plot.forecast(energytsforecastsfuture)
-#?
-#energytimeseries_week_components <- decompose(energytimeseries_week)
-#plot(energytimeseries_week_components)
-#energytimeseries_week_components$seasonal
+energytsforecastsfuture <- forecast(energytsforecasts, h=12)
+plot(energytsforecastsfuture)
+autoplot(energytsforecastsfuture)
+
+autoplot(energytsforecasts)
+
+
+#----------------------------------Machine Learning---------------------------------
+data_1h <- mutate(data_15min, DateTime1h = floor_date(DateTime, "hour"))
+data_1h <- group_by(data_1h, DateTime1h)
+data_1h <- summarize_all(data_1h,funs(mean))
+
+
+dataML <- mutate(data1h, YearTime = as.integer(year(DateTime1h)))
+dataML <- mutate(dataML, MonthTime = as.integer(month(DateTime1h)))
+dataML <- mutate(dataML, Quartertime = as.integer(quarter(DateTime1h)))
+dataML <- mutate(dataML, WeekdayTime = as.integer(wday(DateTime1h)))
+dataML <- mutate(dataML, HourTime = as.integer(hour(DateTime1h)))
+dataML <- dataML[,-c(1, 2, 3, 4, 5)]
+dataMLGAP <- dataML[,-c(2:8)]
+summary(dataMLGAP)
+str(dataMLGAP)
+
+
+#---------PreTrain-----------
+#Datapartition
+Data_Partition <- createDataPartition(dataMLGAP$Global_active_power, p = .75, list = FALSE)
+training <- dataMLGAP[Data_Partition,]
+testing <- dataMLGAP[-Data_Partition,]
+
+#10 fold cross validation
+Control_RepeatedCV <- trainControl(method = "cv", number = 4)
+#fitControl <- trainControl(method = "cv", number = 10)
+
+
+#------------------------------------DT----------------------------------------
+#train DT
+DT <- train(Global_active_power~., data = training, method = "svmlinear", trControl=Control_RepeatedCV, tuneLength = 3)
+DT
+varImp(DT)
+#plot DT
+
+#predictor variables
+predictors(DT)
+
+#make predictions
+testPredDT <- predict(DT, testing)
+
+#performace measurment
+postResample(testPredDT, testing$Volume)
+
+#plot predicted verses actual
+plot(testPredDT,testing$Volume)
+
+#------------------------------------DT----------------------------------------
+#train DT
+DT <- train(Global_active_power~., data = training, method = "rf", trControl=Control_RepeatedCV, tuneLength = 3)
+DT
+varImp(DT)
+#plot DT
+
+#predictor variables
+predictors(DT)
+
+#make predictions
+testPredDT <- predict(DT, testing)
+
+#performace measurment
+postResample(testPredDT, testing$Volume)
+
+#plot predicted verses actual
+plot(testPredDT,testing$Volume)
+
+
+#------------------------------------XGBM----------------------------------------
+#train DT
+XGBM <- train(Volume~ PositiveServiceReview + x4StarReviews + x1StarReviews, data = training, method = "xgbTree",
+              preprocess = c("center","scale"), trControl=Control_RepeatedCV, tuneLength = 20)
+XGBM
+
+varImp(XGBM)
+
+#predictor variables
+predictors(XGBM)
+
+#make predictions
+testPredXGBM <- predict(XGBM, testing)
+
+#performace measurment
+postResample(testPredXGBM, testing$Volume)
+
+#plot predicted verses actual
+plot(testPredXGBM,testing$Volume)
