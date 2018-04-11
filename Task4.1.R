@@ -1,6 +1,8 @@
 
 #------------------------libraries, wd and seed-------------------------------------------
 #libraries
+require(randomForest)
+library(rpart.plot)
 library(caret)
 library(forecast)
 library(readr)
@@ -84,10 +86,7 @@ ggplot(data=data_15min) + geom_boxplot(aes(x= "Global_active_power", y = Global_
   geom_boxplot(aes(x= "Global_reactive_power", y = Global_reactive_power))+
   theme_economist() +
   scale_fill_economist()
-ggplot(data=data_15min) + geom_line(aes(x= DateTime15, y = Global_active_power))
 
-
-  
 #boxplot(data_15min$Global_active_power)
 #boxplot(data_15min$Global_reactive_power)
 #boxplot((data_15min$Voltage))
@@ -109,12 +108,11 @@ minutly_consumption_plot <- function(day1, month1, year1) {
   data_for_plot <- filter(data_for_plot, month(DateTime) == month1)
   data_for_plot <- filter(data_for_plot, day(DateTime) == day1)
 
-ggplot(data_for_plot, aes(x=DateTime)) + geom_point(aes(y = Global_active_power), color = "blue")+
-        geom_point(aes(y=Global_reactive_power), color = "red")+
-        geom_line(aes(y=Sub_metering_1), color= "pink") +
-        geom_line(aes(y=Sub_metering_2), color = "yellow" )+
-        geom_line(aes(y=Sub_metering_3), color = "green")+
-        ggtitle("Consumption per minute")+ theme_economist() +  scale_fill_economist()+
+ggplot(data_for_plot, aes(x=DateTime)) + geom_line(aes(y = Global_active_power))+
+        geom_line(aes(y=Sub_metering_1)) +
+        geom_line(aes(y=Sub_metering_2))+
+        geom_line(aes(y=Sub_metering_3))+
+        ggtitle("Consumption per minute")+ theme_economist() +  scale_colour_economist()+
         xlab("Time") + ylab("Watt hour")
 }
 
@@ -135,7 +133,6 @@ daily_consumption_plot <- function(month1, year1) {
   
   
   ggplot(data_for_plot, aes(x=DateTime)) + geom_line(aes(y = Global_active_power), color = "blue")+
-    geom_line(aes(y=Global_reactive_power), color = "red")+
     geom_line(aes(y=Sub_metering_1), color = "pink")+
     geom_line(aes(y=Sub_metering_2), color = "yellow" )+
     geom_line(aes(y=Sub_metering_3), color = "green")+
@@ -143,7 +140,7 @@ daily_consumption_plot <- function(month1, year1) {
     xlab("Time") + ylab("Watt hour")
 }
 
-daily_consumption_plot(03, 2007)
+daily_consumption_plot(11, 2007)
 
 #consumption in a year
 Monthly_consumption_plot <- function(year1) {
@@ -154,7 +151,6 @@ Monthly_consumption_plot <- function(year1) {
   
   
       ggplot(data_for_plot, aes(x=DateTime)) + geom_line(aes(y = Global_active_power), color = "blue")+
-        geom_line(aes(y=Global_reactive_power), color = "red")+
         geom_line(aes(y=Sub_metering_1), color = "pink")+
         geom_line(aes(y=Sub_metering_2), color = "yellow" )+
         geom_line(aes(y=Sub_metering_3), color = "green")+
@@ -165,7 +161,7 @@ Monthly_consumption_plot <- function(year1) {
 
 
 
-Monthly_consumption_plot(2008)
+Monthly_consumption_plot(2009)
 
 data_for_plot <- aggregate(data_15min, by = list (week(data_15min$DateTime), year(data_15min$DateTime)), FUN = mean)
 weekly_consumption_plot <- function(mode="all") {
@@ -270,29 +266,67 @@ plot.ts(energyts_S3_week2008)
 energyts_SR_week2008 <- energy_pweek("Sub_remaining", 2008)
 plot.ts(energyts_SR_week2008)
 
-energytsforecasts <- HoltWinters(energyts_GAP_year)
-energytsforecasts
-plot(energytsforecasts)
-energytsforecastsfuture <- forecast(energytsforecasts, h=12)
-plot(energytsforecastsfuture)
-autoplot(energytsforecastsfuture)
+#GAP
+energytsforecastsGAP <- HoltWinters(energyts_GAP_year)
+energytsforecastsGAP
+plot(energytsforecastsGAP)
+energytsforecastsfutureGAP <- forecast(energytsforecastsGAP, h=12)
+plot(energytsforecastsfutureGAP)
+autoplot(energytsforecastsfutureGAP)
 
-autoplot(energytsforecasts)
+#GRP
+energytsforecastsGRP <- HoltWinters(energyts_GRP_year)
+energytsforecastsGRP
+plot(energytsforecastsGRP)
+energytsforecastsfutureGRP <- forecast(energytsforecastsGRP, h=12)
+plot(energytsforecastsfutureGRP)
+autoplot(energytsforecastsfutureGRP)
+
+#S1
+energytsforecastsS1 <- HoltWinters(energyts_S1_year)
+energytsforecastsS1
+plot(energytsforecastsS1)
+energytsforecastsfutureS1 <- forecast(energytsforecastsS1, h=12)
+plot(energytsforecastsfutureS1)
+autoplot(energytsforecastsfutureS1)
+
+#s2
+energytsforecastsS2 <- HoltWinters(energyts_S2_year)
+energytsforecastsS2
+plot(energytsforecastsS2)
+energytsforecastsfutureS2 <- forecast(energytsforecastsS2, h=12)
+plot(energytsforecastsfutureS2)
+autoplot(energytsforecastsfutureS2)
+
+#s3
+energytsforecastsS3 <- HoltWinters(energyts_S3_year)
+energytsforecastsS3
+plot(energytsforecastsS3)
+energytsforecastsfutureS3 <- forecast(energytsforecastsS3, h=12)
+plot(energytsforecastsfutureS3)
+autoplot(energytsforecastsfutureS3)
+
+
+
+
 
 
 #----------------------------------Machine Learning---------------------------------
-data_1h <- mutate(data_15min, DateTime1h = floor_date(DateTime, "hour"))
+data_1year <- filter(data_15min, year(DateTime15) == 2010)
+data_1h <- mutate(data_1year, DateTime1h = floor_date(DateTime, "hour"))
 data_1h <- group_by(data_1h, DateTime1h)
 data_1h <- summarize_all(data_1h,funs(mean))
 
 
-dataML <- mutate(data1h, YearTime = as.integer(year(DateTime1h)))
-dataML <- mutate(dataML, MonthTime = as.integer(month(DateTime1h)))
+
+dataML <- mutate(data_1h, YearTime = as.integer(year(DateTime1h)))
+#dataML <- mutate(dataML, MonthTime = as.integer(month(DateTime1h)))
 dataML <- mutate(dataML, Quartertime = as.integer(quarter(DateTime1h)))
 dataML <- mutate(dataML, WeekdayTime = as.integer(wday(DateTime1h)))
+dataML <- mutate(dataML, Week_Weekend = if_else(WeekdayTime %in% c(2,3,4,5,6), "workday", "weekend"))
 dataML <- mutate(dataML, HourTime = as.integer(hour(DateTime1h)))
-dataML <- dataML[,-c(1, 2, 3, 4, 5)]
-dataMLGAP <- dataML[,-c(2:8)]
+dataML <- dataML[,-c(2, 3, 4, 5, 6)]
+dataMLGAP <- dataML[,-c(3:9)]
 summary(dataMLGAP)
 str(dataMLGAP)
 
@@ -304,13 +338,13 @@ training <- dataMLGAP[Data_Partition,]
 testing <- dataMLGAP[-Data_Partition,]
 
 #10 fold cross validation
-Control_RepeatedCV <- trainControl(method = "cv", number = 4)
+Control_RepeatedCV <- trainControl(method = "cv", number = 5)
 #fitControl <- trainControl(method = "cv", number = 10)
 
 
 #------------------------------------DT----------------------------------------
 #train DT
-DT <- train(Global_active_power~., data = training, method = "svmlinear", trControl=Control_RepeatedCV, tuneLength = 3)
+DT <- train(Global_active_power~.-DateTime1h, data = training, method = "rpart", trControl=Control_RepeatedCV, tuneLength = 25)
 DT
 varImp(DT)
 #plot DT
@@ -322,37 +356,37 @@ predictors(DT)
 testPredDT <- predict(DT, testing)
 
 #performace measurment
-postResample(testPredDT, testing$Volume)
+postResample(testPredDT, testing$Global_active_power)
 
 #plot predicted verses actual
-plot(testPredDT,testing$Volume)
+plot(testPredDT,testing$Global_active_power)
 
+#plot DT
+rpart.plot(DT$finalModel)
 #------------------------------------DT----------------------------------------
 #train DT
-DT <- train(Global_active_power~., data = training, method = "rf", trControl=Control_RepeatedCV, tuneLength = 3)
-DT
-varImp(DT)
-#plot DT
+RF <- train(Global_active_power~.-DateTime1h, data = training, method = "rf", importance = TRUE, trControl=Control_RepeatedCV, tuneLength =10)
+RF
+varImp(RF)
 
 #predictor variables
-predictors(DT)
+predictors(RF)
 
 #make predictions
-testPredDT <- predict(DT, testing)
+testPredRF <- predict(RF, testing)
 
 #performace measurment
-postResample(testPredDT, testing$Volume)
+postResample(testPredRF, testing$Global_active_power)
 
 #plot predicted verses actual
-plot(testPredDT,testing$Volume)
-
+plot(testPredRF,testing$Global_active_power)
 
 #------------------------------------XGBM----------------------------------------
 #train DT
 XGBM <- train(Volume~ PositiveServiceReview + x4StarReviews + x1StarReviews, data = training, method = "xgbTree",
               preprocess = c("center","scale"), trControl=Control_RepeatedCV, tuneLength = 20)
+XGBM <- train(Global_active_power~.-DateTime1h, data = training, method = "svmLinear", importance = TRUE, trControl=Control_RepeatedCV, tuneLength =10)
 XGBM
-
 varImp(XGBM)
 
 #predictor variables
@@ -362,7 +396,7 @@ predictors(XGBM)
 testPredXGBM <- predict(XGBM, testing)
 
 #performace measurment
-postResample(testPredXGBM, testing$Volume)
+postResample(testPredXGBM, testing$Global_active_power)
 
 #plot predicted verses actual
-plot(testPredXGBM,testing$Volume)
+plot(testPredXGBM,testing$Global_active_power)
