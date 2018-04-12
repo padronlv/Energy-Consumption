@@ -72,11 +72,29 @@ summary(data_hec_pre)
 data_hec_pre2 <- mutate(data_hec_pre, DateTime15 = floor_date(DateTime, "15 minutes"))
 data_15min <- group_by(data_hec_pre2, DateTime15)
 data_15min <- summarize_all(data_15min,funs(mean))
+data_15min <- data_15min[,-c(2,3,4,5,8,9)]
+data_15min <- mutate(data_15min, WeekdayTime = wday(DateTime15))
+
+#----------------------------Change granularity(1h)----------------
+data_1h <- mutate(data_15min, DateTime1h = floor_date(DateTime15, "hour"))
+data_1h <- group_by(data_1h, DateTime1h = (DateTime1h))
+data_1h <- summarize_all(data_1h,funs(mean))
+
+#-----------------------------Mean weekday-----------------------------------
+
+data_1hW <- filter(data_1h, WeekdayTime %in% 2:6)
+data_1hW <- group_by(data_1hW, DateTime1h = hour(DateTime1h))
+data_1hW <- summarise_all(data_1hW, funs(mean))
+
+#----------------------------Mean Weekend-day----------------
+data_1hWd <- filter(data_1h, WeekdayTime %in% c(1,7))
+data_1hWd <- group_by(data_1hWd, DateTime1h = hour(DateTime1h))
+data_1hWd <- summarise_all(data_1hWd, funs(mean))
+
 
 #---------------------------------------weekday/weekend day----------------------------
 energywd <- group_by(data_15min, daysea= quarter(DateTime15), daywe= wday(DateTime15))
 energywd <- summarize_all(energywd, funs(mean))
-
 energywd <- mutate(energywd, wd = which())
 
 
@@ -94,7 +112,24 @@ ggplot(data=data_15min) + geom_boxplot(aes(x= "Global_active_power", y = Global_
 #boxplot((data_15min$Sub_metering_2))
 #boxplot((data_15min$Sub_metering_3))
 
+#plot comsumption mean week day
+ggplot(data_1hW, aes(x=DateTime1h)) + geom_line(aes(y = Global_active_power))+
+  geom_line(aes(y=Sub_metering_1)) +
+  geom_line(aes(y=Sub_metering_2))+
+  geom_line(aes(y=Sub_metering_3))+
+  ggtitle("Consumption in a Mo-Fr Day")+ theme_economist() +  scale_colour_economist()+
+  xlab("Time") + ylab("Watt-hour")
 
+#plot consumption mean weekend day
+ggplot(data_1hWd, aes(x=DateTime1h)) + geom_line(aes(y = Global_active_power, color = "black"))+
+  geom_line(aes(y=Sub_metering_1, color = "red")) +
+  geom_line(aes(y=Sub_metering_2, color = "green"))+
+  geom_line(aes(y=Sub_metering_3, color = "blue"))+
+  ggtitle("Consumption in the Weekend")+ theme_economist() +  scale_colour_economist()+
+  xlab("Time") + ylab("Watt-hour")
+
+
+#plot consupmtion per months for all submeterings
 data_for_plot_wd <- gather(energywd, electricity_mode, watt_hour, Global_active_power, Global_reactive_power, 
                         Sub_metering_1, Sub_metering_2, Sub_metering_3, Sub_remaining)
 ggplot() + geom_col(data=data_for_plot_wd, aes(x=factor(daywe), y = watt_hour, fill = factor(daysea)), position="dodge")+
@@ -118,10 +153,9 @@ ggplot(data_for_plot, aes(x=DateTime)) + geom_line(aes(y = Global_active_power))
 
 minutly_consumption_plot(24, 04, 2007)
 
-#data_for_plot <- aggregate(data_hec_pre, by = list (date(data_hec_pre$DateTime)), FUN = mean)
-#length(which(is.na(data_for_plot)))
-#data_for_plot <- aggregate(data_hec_pre, by = list (date(data_hec_pre$DateTime)), FUN = mean)
-#data_for_plot <- aggregate(data_for_plot, by = list (month(data_for_plot$Group.1)), FUN = mean)
+
+
+
 
 #consumption in a month
 daily_consumption_plot <- function(month1, year1) {
