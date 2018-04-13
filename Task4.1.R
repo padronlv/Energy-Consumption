@@ -112,6 +112,14 @@ ggplot(data=data_15min) + geom_boxplot(aes(x= "Global_active_power", y = Global_
 #boxplot((data_15min$Sub_metering_2))
 #boxplot((data_15min$Sub_metering_3))
 
+#pie chart consumption
+dataglobal <- gather(data_15min, electricity_mode, watt_hour, Sub_metering_1, Sub_metering_2, Sub_metering_3, Sub_remaining)
+dataglobal <- group_by(dataglobal, electricity_mode)
+dataglobal <- summarize_all(dataglobal, funs(mean))
+ggplot(data=dataglobal) + geom_count(aes(x = electricity_mode, y = 0, size = watt_hour, color = electricity_mode)) +
+  theme_economist() +  scale_colour_economist() + scale_size_area(max_size = 200) +
+  theme(legend.position = "none", panel.grid = element_blank(), axis.title= element_blank(),axis.text = element_blank(), axis.ticks = element_blank())
+
 #plot comsumption mean week day
 ggplot(data_1hW, aes(x=DateTime1h)) + geom_line(aes(y = Global_active_power))+
   geom_line(aes(y=Sub_metering_1)) +
