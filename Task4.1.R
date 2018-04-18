@@ -121,18 +121,18 @@ ggplot(data=dataglobal) + geom_count(aes(x = electricity_mode, y = 0, size = wat
   theme(legend.position = "none", panel.grid = element_blank(), axis.title= element_blank(),axis.text = element_blank(), axis.ticks = element_blank())
 
 #plot comsumption mean week day
-ggplot(data_1hW, aes(x=DateTime1h)) + geom_line(aes(y = Global_active_power))+
-  geom_line(aes(y=Sub_metering_1)) +
-  geom_line(aes(y=Sub_metering_2))+
-  geom_line(aes(y=Sub_metering_3))+
-  ggtitle("Consumption in a Mo-Fr Day")+ theme_economist() +  scale_colour_economist()+
+ggplot(data_1hW, aes(x=DateTime1h)) + geom_line(aes(y = Global_active_power), color = "red")+
+  geom_line(aes(y=Sub_metering_1), color = "blue") +
+  geom_line(aes(y=Sub_metering_2), color = "green")+
+  geom_line(aes(y=Sub_metering_3), color =  "black")+
+  ggtitle("Consumption in a Mo-Fr Day")+ theme_economist() + 
   xlab("Time") + ylab("Watt-hour")
 
 #plot consumption mean weekend day
-ggplot(data_1hWd, aes(x=DateTime1h)) + geom_line(aes(y = Global_active_power, color = "black"))+
-  geom_line(aes(y=Sub_metering_1, color = "red")) +
-  geom_line(aes(y=Sub_metering_2, color = "green"))+
-  geom_line(aes(y=Sub_metering_3, color = "blue"))+
+ggplot(data_1hWd, aes(x=DateTime1h)) + geom_line(aes(y = Global_active_power), color = "red")+
+  geom_line(aes(y=Sub_metering_1), color = "blue")+
+  geom_line(aes(y=Sub_metering_2), color = "green")+
+  geom_line(aes(y=Sub_metering_3), color = "black")+
   ggtitle("Consumption in the Weekend")+ theme_economist() +  scale_colour_economist()+
   xlab("Time") + ylab("Watt-hour")
 
